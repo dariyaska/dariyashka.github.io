@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Final Exam Prep — Cybersecurity</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --border: #1e1e2e;
+    --accent: #00ff88;
+    --accent2: #ff3366;
+    --accent3: #4488ff;
+    --text: #e8e8f0;
+    --muted: #5a5a7a;
+    --correct: #00ff88;
+    --wrong: #ff3366;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 20% 20%, rgba(0,255,136,0.04) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(68,136,255,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .screen { display: none; position: relative; z-index: 1; }
+  .screen.active { display: flex; }
+
+  /* HOME */
+  #start-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 40px 20px; text-align: center; }
+  .logo-badge { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--accent); text-transform: uppercase; border: 1px solid var(--accent); padding: 6px 16px; margin-bottom: 32px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  h1 { font-size: clamp(36px, 7vw, 72px); font-weight: 800; line-height: 1; margin-bottom: 16px; background: linear-gradient(135deg, var(--text) 0%, var(--accent) 50%, var(--accent3) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .subtitle { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--muted); letter-spacing: 1px; margin-bottom: 32px; }
+  .stats-row { display: flex; gap: 20px; margin-bottom: 28px; flex-wrap: wrap; justify-content: center; }
+  .stat-box { background: var(--surface); border: 1px solid var(--border); padding: 16px 22px; text-align: center; }
+  .stat-num { font-size: 36px; font-weight: 800; color: var(--accent); display: block; font-family: 'Space Mono', monospace; }
+  .stat-label { font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-top: 4px; }
+  .missed-badge { background: rgba(255,51,102,0.1); border: 1px solid var(--accent2); color: var(--accent2); font-family: 'Space Mono', monospace; font-size: 12px; padding: 8px 16px; margin-bottom: 24px; display: none; }
+  .mode-title { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .mode-buttons { display: flex; gap: 10px; margin-bottom: 32px; flex-wrap: wrap; justify-content: center; }
+  .mode-btn { background: var(--surface); border: 2px solid var(--border); color: var(--muted); padding: 10px 18px; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 1px; cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
+  .mode-btn:hover, .mode-btn.selected { border-color: var(--accent); color: var(--accent); background: rgba(0,255,136,0.05); }
+  .start-btn { background: var(--accent); color: #000; border: none; padding: 18px 52px; font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; transition: all 0.2s; }
+  .start-btn:hover { background: #00cc6e; transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,255,136,0.3); }
+
+  /* QUIZ */
+  #quiz-screen { flex-direction: column; min-height: 100vh; padding: 24px 20px; max-width: 760px; margin: 0 auto; width: 100%; }
+  .quiz-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; gap: 16px; }
+  .q-counter { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); letter-spacing: 2px; white-space: nowrap; }
+  .q-counter span { color: var(--accent); font-weight: 700; }
+  .progress-bar { flex: 1; height: 3px; background: var(--border); overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); transition: width 0.4s ease; box-shadow: 0 0 8px var(--accent); }
+  .score-live { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .score-live .s { color: var(--accent); }
+  .score-live .w { color: var(--accent2); }
+  .source-tag { display: inline-block; font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 4px 10px; margin-bottom: 16px; border: 1px solid; }
+  .source-tag.midterm { border-color: var(--accent3); color: var(--accent3); }
+  .source-tag.endterm { border-color: #ff9900; color: #ff9900; }
+  .question-text { font-size: clamp(17px, 3vw, 22px); font-weight: 600; line-height: 1.5; margin-bottom: 28px; }
+  .options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .option-btn { background: var(--surface); border: 2px solid var(--border); color: var(--text); padding: 14px 18px; font-family: 'Syne', sans-serif; font-size: 14px; cursor: pointer; text-align: left; transition: all 0.15s; display: flex; align-items: center; gap: 12px; position: relative; overflow: hidden; }
+  .option-btn::before { content:''; position:absolute; left:0; top:0; bottom:0; width:0; background:rgba(0,255,136,0.07); transition:width 0.2s; }
+  .option-btn:hover:not(:disabled)::before { width: 100%; }
+  .option-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .opt-letter { font-family: 'Space Mono', monospace; font-size: 11px; width: 22px; height: 22px; border: 1px solid currentColor; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .option-btn.correct { border-color: var(--correct); color: var(--correct); background: rgba(0,255,136,0.08); }
+  .option-btn.wrong { border-color: var(--wrong); color: var(--wrong); background: rgba(255,51,102,0.08); }
+  .option-btn:disabled { cursor: default; }
+  .option-btn:disabled::before { display: none; }
+  .feedback-box { padding: 12px 16px; font-family: 'Space Mono', monospace; font-size: 12px; margin-bottom: 20px; display: none; line-height: 1.6; }
+  .feedback-box.correct { border-left: 3px solid var(--correct); color: var(--correct); background: rgba(0,255,136,0.05); }
+  .feedback-box.wrong { border-left: 3px solid var(--wrong); color: var(--wrong); background: rgba(255,51,102,0.05); }
+  .feedback-box.show { display: block; }
+  .next-btn { background: transparent; border: 2px solid var(--accent); color: var(--accent); padding: 14px 36px; font-family: 'Space Mono', monospace; font-size: 13px; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; transition: all 0.2s; display: none; }
+  .next-btn.show { display: inline-block; }
+  .next-btn:hover { background: var(--accent); color: #000; }
+
+  /* RESULTS */
+  #results-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 40px 20px; text-align: center; }
+  .result-grade { font-family: 'Space Mono', monospace; font-size: clamp(80px, 14vw, 120px); font-weight: 700; line-height: 1; margin-bottom: 8px; }
+  .result-grade.A { color: var(--accent); text-shadow: 0 0 40px rgba(0,255,136,0.5); }
+  .result-grade.B { color: #88ffcc; }
+  .result-grade.C { color: #ffcc00; }
+  .result-grade.D { color: var(--accent2); }
+  .result-label { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .streak-info { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--accent3); margin-bottom: 28px; }
+  .result-stats { display: flex; gap: 20px; margin-bottom: 28px; flex-wrap: wrap; justify-content: center; }
+  .res-stat { background: var(--surface); border: 1px solid var(--border); padding: 16px 24px; min-width: 100px; }
+  .res-stat-num { font-family: 'Space Mono', monospace; font-size: 28px; font-weight: 700; display: block; }
+  .res-stat-num.g { color: var(--correct); }
+  .res-stat-num.b { color: var(--wrong); }
+  .res-stat-num.p { color: var(--accent3); }
+  .res-stat-label { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+  .missed-section { max-width: 700px; width: 100%; margin-bottom: 28px; text-align: left; }
+  .missed-title { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent2); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .missed-item { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent2); padding: 12px 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.6; }
+  .missed-item strong { color: var(--accent2); font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 1px; }
+  .missed-item .ans { color: var(--correct); font-weight: 600; font-family: 'Space Mono', monospace; font-size: 12px; }
+  .result-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .result-btn { padding: 13px 28px; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+  .result-btn.primary { background: var(--accent); border: 2px solid var(--accent); color: #000; font-weight: 700; }
+  .result-btn.primary:hover { background: #00cc6e; }
+  .result-btn.secondary { background: transparent; border: 2px solid var(--border); color: var(--muted); }
+  .result-btn.secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+  .result-btn.tertiary { background: transparent; border: 2px solid var(--accent3); color: var(--accent3); }
+  .result-btn.tertiary:hover { background: rgba(68,136,255,0.1); }
+</style>
+</head>
+<body>
+
+<div id="start-screen" class="screen active">
+  <div class="logo-badge">Cyber Security</div>
+  <h1>FINAL EXAM<br>PREP</h1>
+  <p class="subtitle">// 10 вопросов за раз · умный повтор ошибок //</p>
+  <div class="stats-row">
+    <div class="stat-box"><span class="stat-num" id="stat-total">90</span><div class="stat-label">Вопросов</div></div>
+    <div class="stat-box"><span class="stat-num" id="stat-missed">0</span><div class="stat-label">В банке ошибок</div></div>
+    <div class="stat-box"><span class="stat-num">10</span><div class="stat-label">За раунд</div></div>
+  </div>
+  <div class="missed-badge" id="missed-badge">⚡ Есть ошибки из прошлых сессий — рекомендуется «Умный» режим</div>
+  <p class="mode-title">// Режим //</p>
+  <div class="mode-buttons">
+    <button class="mode-btn selected" onclick="selectMode('smart',this)">⚡ Умный</button>
+    <button class="mode-btn" onclick="selectMode('all',this)">Все вопросы</button>
+    <button class="mode-btn" onclick="selectMode('midterm',this)">Midterm</button>
+    <button class="mode-btn" onclick="selectMode('endterm',this)">Endterm</button>
+    <button class="mode-btn" onclick="selectMode('missed',this)">Только ошибки</button>
+  </div>
+  <button class="start-btn" onclick="startQuiz()">СТАРТ →</button>
+</div>
+
+<div id="quiz-screen" class="screen">
+  <div class="quiz-header">
+    <div class="q-counter">Q <span id="q-num">1</span> / <span id="q-total">10</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="score-live">✓<span class="s" id="score-correct">0</span> ✗<span class="w" id="score-wrong">0</span></div>
+  </div>
+  <div class="source-tag" id="source-tag">Midterm</div>
+  <div class="question-text" id="question-text"></div>
+  <div class="options" id="options"></div>
+  <div class="feedback-box" id="feedback-box"></div>
+  <button class="next-btn" id="next-btn" onclick="nextQuestion()">Далее →</button>
+</div>
+
+<div id="results-screen" class="screen">
+  <div class="result-grade" id="result-grade">A</div>
+  <div class="result-label" id="result-label">Отлично!</div>
+  <div class="streak-info" id="streak-info"></div>
+  <div class="result-stats">
+    <div class="res-stat"><span class="res-stat-num g" id="res-correct">0</span><div class="res-stat-label">Верно</div></div>
+    <div class="res-stat"><span class="res-stat-num b" id="res-wrong">0</span><div class="res-stat-label">Ошибок</div></div>
+    <div class="res-stat"><span class="res-stat-num p" id="res-pct">0%</span><div class="res-stat-label">Счёт</div></div>
+  </div>
+  <div class="missed-section" id="missed-section">
+    <div class="missed-title">⚡ Запомни эти вопросы!</div>
+    <div id="missed-list"></div>
+  </div>
+  <div class="result-btns">
+    <button class="result-btn primary" onclick="startQuiz()">Ещё 10 →</button>
+    <button class="result-btn tertiary" onclick="trainMissed()">Тренировать ошибки</button>
+    <button class="result-btn secondary" onclick="goHome()">← Меню</button>
+  </div>
+</div>
+
+<script>
+const ALL_QUESTIONS = [
+  // MIDTERM
+  {source:'midterm',q:"Which QRadar feature helps enrich investigations by linking assets, vulnerabilities, and identities to events?",opts:["EPS License Only","WinCollect Only","QID Map Only","Asset Model / Asset Database"],ans:3},
+  {source:'midterm',q:"Which QRadar component is primarily used to run ad-hoc searches across event data?",opts:["Ariel Search","CRE Engine","DSM Editor","WinCollect"],ans:0},
+  {source:'midterm',q:"During initial triage of a suspected compromised host, which action best preserves forensic value?",opts:["Reinstall the OS before collecting evidence","Immediately wipe the disk","Isolate the host from the network and collect volatile + key artifacts","Delete all browser data"],ans:2},
+  {source:'midterm',q:"Which QRadar view is typically used to inspect individual raw events quickly?",opts:["Reports","Log Activity","Assets","Admin"],ans:1},
+  {source:'midterm',q:"Which artifact most strongly indicates suspicious lateral movement over SMB?",opts:["A user changing wallpaper","Multiple failed logons then successful logons across hosts (4625 → 4624)","One ping to a default gateway","A single DNS query to a public domain"],ans:1},
+  {source:'midterm',q:"Which data source is most useful to identify suspicious PowerShell execution patterns on endpoints?",opts:["Printer spooler logs only","Windows Event Logs / Sysmon process creation events","DHCP lease logs","BIOS firmware logs"],ans:1},
+  {source:'midterm',q:"Which network artifact best helps identify data exfiltration in HTTPS when content is encrypted?",opts:["BIOS serial number","Packet payload content","Mouse movement logs","Flow metadata (bytes, timing, destination, frequency)"],ans:3},
+  {source:'midterm',q:"Which artifact is most useful to confirm whether a suspicious file actually executed?",opts:["File creation time only","Monitor brightness level","Keyboard language setting","Process execution logs (Sysmon Event ID 1) and related child processes"],ans:3},
+  {source:'midterm',q:"Which file location is commonly abused for user-level persistence using Startup shortcuts?",opts:["C:\\Windows\\System32\\config","%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup","%WINDIR%\\Fonts","C:\\Program Files\\Common Files"],ans:1},
+  {source:'midterm',q:"Which Windows scheduled task characteristic is most suspicious in persistence hunting?",opts:["A task that runs Windows Update","A task running from a user-writable path with an uncommon name","A task that triggers weekly disk cleanup","A task created by Microsoft with a signed binary"],ans:1},
+  {source:'midterm',q:"Which is the best next step after extracting a suspicious hash from an endpoint?",opts:["Enrich it with reputation/VT-like checks and hunt for it across telemetry","Immediately publish it publicly","Ignore it if the file is small","Disable logging to speed up the host"],ans:0},
+  {source:'midterm',q:"When validating potential C2 activity, what correlation is most valuable?",opts:["CPU temperature trends","DNS query volume only","Outbound connections + DNS resolution + process/user context","Antivirus signature age only"],ans:2},
+  {source:'midterm',q:"In host triage, which evidence best supports detecting suspicious process injection?",opts:["A large number of user accounts","Many installed printers","High disk free space","Unusual parent-child process relationships and memory anomalies"],ans:3},
+  {source:'midterm',q:"When analyzing suspicious downloads, which factor most helps determine if an executable is masquerading?",opts:["File icon color","Keyboard layout","File extension and actual file headers/signature mismatch","Screen resolution"],ans:2},
+  {source:'midterm',q:"Which QRadar artifact is best suited for storing a dynamic list of known-bad IPs for correlation rules?",opts:["Search Group","Dashboard Widget","Reference Set","Offense Note"],ans:2},
+  {source:'midterm',q:"In QRadar, which type of data is most associated with 'what happened on the network' (sessions, bytes, ports)?",opts:["Flows","Rules","Offenses","Reference Sets"],ans:0},
+  {source:'midterm',q:"What does 'pivoting' mean in an investigation workflow?",opts:["Rebooting the SIEM to refresh caches","Using one artifact (IP, hash, user) to find related evidence","Exporting logs to CSV only","Changing the time zone of logs"],ans:1},
+  {source:'midterm',q:"What is the most appropriate first step in threat hunting when you receive a suspicious indicator from CTI?",opts:["Delete all related logs","Immediately block it everywhere without validation","Ignore it until an alert triggers","Build a hypothesis and validate with telemetry"],ans:3},
+  {source:'midterm',q:"What is a reliable method to validate if a domain is being used for C2 in your network?",opts:["Delete the DNS logs","Check only the domain's spelling","Rely only on an internet rumor","Correlate DNS queries with outbound connections and process context"],ans:3},
+  {source:'midterm',q:"In QRadar, which feature is best for reusing a validated IOC list across multiple correlation rules?",opts:["Reference Set","Offense Type","Building Block","EPS Threshold"],ans:0},
+  {source:'midterm',q:"In host-based investigation, why is parent process context important?",opts:["It disables anti-malware automatically","It changes the hash of the process","It helps identify how a suspicious process was launched","It shows the computer model"],ans:2},
+  {source:'midterm',q:"Which Windows artifact most strongly supports confirming program execution history (especially for GUI apps)?",opts:["Prefetch files","hosts file","pagefile.sys only","wallpaper settings"],ans:0},
+  {source:'midterm',q:"What is a common reason an investigation misses evidence in QRadar searches?",opts:["Incorrect time range / time zone selection","Using too many dashboards","Installing too many DSMs","Too much RAM on the console"],ans:0},
+  {source:'midterm',q:"In QRadar, which AQL keyword is used to restrict the number of returned records?",opts:["OFFSET","TOP","COUNT","LIMIT"],ans:3},
+  {source:'midterm',q:"In threat hunting, what is the primary difference between an IOC and a TTP?",opts:["IOC is a specific observable; TTP is a behavioral pattern","IOC and TTP mean the same thing","IOC is a technique; TTP is always a file hash","IOC is only network-based; TTP is only host-based"],ans:0},
+  // MIDTERM — новые
+  {source:'midterm',q:"In AQL, which clause is used to filter rows by a condition (similar to SQL)?",opts:["ORDER BY","GROUP BY","WHERE","SELECT"],ans:2},
+  {source:'midterm',q:"Which Windows artifact most directly indicates common persistence via 'Run' keys?",opts:["HKLM\\Software\\Policies\\Microsoft\\Windows\\Firewall","HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run","C:\\Windows\\Temp\\hosts","C:\\Windows\\System32\\drivers\\etc\\services"],ans:1},
+  {source:'midterm',q:"What is the main benefit of mapping findings to MITRE ATT&CK during hunts?",opts:["It disables correlation rules","It replaces log collection","It increases packet size","It standardizes classification and helps coverage planning"],ans:3},
+  {source:'midterm',q:"Which QRadar function is most aligned with reducing false positives in correlation rules?",opts:["Adding contextual conditions (asset value, user role, baseline thresholds)","Removing log sources from ingestion","Turning off normalization","Disabling all rule tests"],ans:0},
+  {source:'midterm',q:"Which outcome best indicates a hunt was successful even if no active compromise was found?",opts:["You disabled rules to reduce alerts","You avoided documenting findings","You collected fewer logs","You improved detections, coverage, and baselines based on validated hypotheses"],ans:3},
+  {source:'midterm',q:"What is a practical way to detect 'living off the land' abuse in hunts?",opts:["Look for unusual usage of legitimate tools (PowerShell, wmic, rundll32) with suspicious arguments","Block all Windows binaries","Ignore signed binaries","Only monitor web browsing history"],ans:0},
+  {source:'midterm',q:"Which method best reduces the risk of missing related activity when hunting by IP?",opts:["Only check firewall blocks","Also pivot to domains, certificates, JA3, and associated processes/users","Search only exact IP matches","Stop after the first result"],ans:1},
+  {source:'midterm',q:"Which QRadar feature is responsible for evaluating correlation rules in near real-time?",opts:["QRadar Advisor","CRE (Correlation Rules Engine)","DSM Normalization","Ariel Database"],ans:1},
+  {source:'midterm',q:"Which approach best fits 'hypothesis-driven' threat hunting?",opts:["Search everything for everything with no plan","Start from a statement like 'Attackers used stolen creds to access VPN' and test it","Only wait for IDS alerts","Only analyze malware samples offline"],ans:1},
+  {source:'midterm',q:"During network hunting, which protocol is commonly used by malware for name resolution?",opts:["ICMP","DNS","ARP","NTP"],ans:1},
+  {source:'midterm',q:"Which concept best describes collecting 'normal' behavior metrics to detect anomalies during hunts?",opts:["Encryption","Sandboxing","Obfuscation","Baseline"],ans:3},
+  {source:'midterm',q:"Which behavior is a strong clue of credential theft via browser data collection?",opts:["High fan speed","Increased screen brightness","Frequent NTP sync failures","Access to browser credential stores and related files"],ans:3},
+  {source:'midterm',q:"Which Sysmon Event ID most directly helps link an outbound network connection to the originating process?",opts:["Event ID 1 (Process Create)","Event ID 7 (Image Loaded)","Event ID 3 (Network Connection)","Event ID 13 (Registry Value Set)"],ans:2},
+
+  // ENDTERM
+  {source:'endterm',q:"OSINT stands for:",opts:["Operational SIEM indexing","Open secure interface net","Open source intelligence","Offline system integrity"],ans:2},
+  {source:'endterm',q:"Atomic Red Team provides:",opts:["Password generation utilities","Small tests that replicate attacker techniques","Hardware troubleshooting tools","Large-scale malware campaigns"],ans:1},
+  {source:'endterm',q:"ATT&CK technique for phishing is:",opts:["T1059","T1566","T1005","T1040"],ans:1},
+  {source:'endterm',q:"A plan to emulate attacker actions is also called:",opts:["Cloud migration plan","Adversary emulation plan","Logging retention plan","Defense mapping plan"],ans:1},
+  {source:'endterm',q:'"Dropped file" in sandbox means:',opts:["File opened by admin","File deleted by user","File copied from USB","File created by sample"],ans:3},
+  {source:'endterm',q:"CAR stands for:",opts:["Computer Alert Registry","Cyber Activity Report","Cyber Attack Response","Cyber Analytics Repository"],ans:3},
+  {source:'endterm',q:"PowerShell script block logging event ID:",opts:["4104","4625","5156","4688"],ans:0},
+  {source:'endterm',q:"What is typically the final step in a basic data collection process?",opts:["Data deletion","Data storage","Data guessing","Data labeling"],ans:1},
+  {source:'endterm',q:"What does data processing and exploitation help with?",opts:["Destroying archived datasets","Randomizing collected records","Converting raw data into useful information","Encrypting user passwords"],ans:2},
+  {source:'endterm',q:"Atomic Red Team tests follow which philosophy?",opts:["Large and complex","Small and modular","Random and unpredictable","Proprietary and expensive"],ans:1},
+  {source:'endterm',q:"APT groups are known for:",opts:["Short and opportunistic attacks","Accidental physical damage","Routine system maintenance","Long-term targeted operations"],ans:3},
+  {source:'endterm',q:"The goal of creating a plan to emulate attacker actions is to:",opts:["Test security defenses realistically","Improve firewall throughput","Train staff in customer service","Perform routine patch updates"],ans:0},
+  {source:'endterm',q:"What is the purpose of the Reconnaissance step?",opts:["Purge audit records","Block outbound traffic","Verify backup integrity","Identify and study the target"],ans:3},
+  {source:'endterm',q:"urlscan.io is mainly used to:",opts:["Patch domain registrars","Build YARA signatures","Modify Windows registry","Scan URL behavior safely"],ans:3},
+  {source:'endterm',q:"In phishing-kit analysis, server scripts show:",opts:["Monitor resolution list","GPU driver settings","Credential capture logic","Keyboard layout data"],ans:2},
+  {source:'endterm',q:"SIEM correlation is mainly for:",opts:["Encrypting logs at rest","Creating user passwords","Linking events into patterns","Converting PDF to DOCX"],ans:2},
+  {source:'endterm',q:'ATT&CK technique "Data from Local System":',opts:["T1055","T1005","T1059","T1566"],ans:1},
+  {source:'endterm',q:"A common indicator used in CTI is:",opts:["Daily weather readings","IP addresses or file hashes","Movie genre preferences","Website color themes"],ans:1},
+  {source:'endterm',q:"A good phishing-blocking IOC is:",opts:["Windows user SID","Screen brightness level","Full URL path","Local printer name"],ans:2},
+  {source:'endterm',q:"Safe malware handling usually means:",opts:["Run it on your laptop","Share it in public chats","Use isolated VM/sandbox","Disable security tools"],ans:2},
+  {source:'endterm',q:"In threat hunting, what is an IOC?",opts:["An observable malicious artifact","A finalized incident report","A confirmed attacker identity","A repeatable detection rule"],ans:0},
+  {source:'endterm',q:"STIX is best described as:",opts:["A CTI data model","A Windows log channel","A disk imaging format","A packet capture type"],ans:0},
+  {source:'endterm',q:"Which VirusTotal tab is best for sandbox actions?",opts:["Behavior","Votes","Community","Details"],ans:0},
+  {source:'endterm',q:"TAXII is best described as:",opts:["A CTI transport API","A password algorithm","A proxy configuration","A malware packer"],ans:0},
+  {source:'endterm',q:"Best next step after finding a C2 domain:",opts:["Pivot to related infra","Disable all DNS servers","Reinstall the browser","Ignore it completely"],ans:0},
+  {source:'endterm',q:"Which Windows event ID is 'audit log cleared'?",opts:["4624","4688","5156","1102"],ans:3},
+  {source:'endterm',q:"Data exploitation most commonly means:",opts:["Extracting insights from data","Encrypting a database","Removing old backups","Ignoring collected data"],ans:0},
+  {source:'endterm',q:"Sysmon process creation event ID is:",opts:["7","11","1","3"],ans:2},
+  {source:'endterm',q:"Learning APT techniques helps defenders:",opts:["Understand sophisticated attacker operations","Avoid applying patches","Build their own APT teams","Encrypt removable media"],ans:0},
+  {source:'endterm',q:"Which VirusTotal view is best for pivoting links?",opts:["Relations","Votes","Upload","History"],ans:0},
+  // ENDTERM — новые
+  {source:'endterm',q:"In SIEM hunting, why list Event IDs?",opts:["Lower CPU temperature","Faster Wi-Fi download","Longer PDF page count","Reproducible evidence trail"],ans:3},
+  {source:'endterm',q:"VirusTotal Graph helps mostly with:",opts:["Email DKIM signing","File system defrag","Artifact relationship view","BIOS firmware updates"],ans:2},
+  {source:'endterm',q:"Sigma logsource commonly includes:",opts:["category, product, service","score, risk, owner","ip, url, domain","hash, mutex, path"],ans:0},
+  {source:'endterm',q:"A high-confidence indicator is:",opts:["Common OS process name","One-time DNS query","Widely flagged file hash","Private RFC1918 IP"],ans:2},
+  {source:'endterm',q:"Which service shows archived web pages?",opts:["GreyNoise","Wayback Machine","Shodan","Censys"],ans:1},
+  {source:'endterm',q:"CyberChef is best for:",opts:["Router firmware flashing","Kernel exploit writing","SIEM license management","Quick data decoding work"],ans:3},
+  {source:'endterm',q:"What is a typical output of a threat hunt?",opts:["New hypotheses and detections","Improved email delivery speed","Higher gaming performance","Faster wireless throughput"],ans:0},
+  {source:'endterm',q:"Windows process creation event ID (Security log) is:",opts:["1102","4104","4624","4688"],ans:3},
+  {source:'endterm',q:"A common phishing-kit language is:",opts:["Erlang","COBOL","PHP","Fortran"],ans:2},
+  {source:'endterm',q:"What is 'threat enrichment'?",opts:["Disable proxy policies","Remove endpoint agents","Delete SIEM dashboards","Add context to artifacts"],ans:3},
+  {source:'endterm',q:"Best enrichment for a suspicious domain:",opts:["Change wallpaper image","WHOIS and passive DNS","Clear browser cookies","Disable Windows updates"],ans:1},
+  {source:'endterm',q:"The MITRE ATT&CK framework is a:",opts:["Collection of malware samples","Antivirus certification program","List of security hardware vendors","Knowledge base of adversary tactics and techniques"],ans:3},
+  {source:'endterm',q:"Which Windows event is successful logon?",opts:["4625","4624","1102","4688"],ans:1},
+  {source:'endterm',q:"Which phase in the Cyber Kill Chain focuses on delivering malware?",opts:["Weaponization","Reconnaissance","Delivery","Installation"],ans:2},
+  {source:'endterm',q:"Threat hunters mainly look for:",opts:["Unknown or hidden threats","Scheduled software updates","Normal hardware failures","Routine system warnings"],ans:0},
+  {source:'endterm',q:"SIEM normalization is mainly for:",opts:["Faster CPU clock speed","Automatic malware removal","Consistent field structure","Manual ticket assignment"],ans:2},
+  {source:'endterm',q:"WHOIS is mainly used to find:",opts:["Windows event logs","File encryption keys","TLS session keys","Registrar and dates"],ans:3},
+  {source:'endterm',q:"A common Windows persistence location:",opts:["Startup folder","System32 fonts","Temp directory","Recycle Bin path"],ans:0},
+  {source:'endterm',q:"YARA is mainly used to:",opts:["Configure firewalls","Match malware file patterns","Send threat intelligence feeds","Scan network ports"],ans:1},
+  {source:'endterm',q:"A sandbox is best described as:",opts:["A threat intel feed","A network scanner","An isolated test runtime for malware","A SIEM correlation engine"],ans:2},
+  {source:'endterm',q:"What does CTI mainly analyze?",opts:["Server hardware specs","Adversary behavior and tactics","Network cable types","CPU benchmark scores"],ans:1},
+  {source:'endterm',q:"A strong suspicious process chain in Windows is:",opts:["explorer → notepad","svchost → iexplore","winword → powershell","taskmgr → calc"],ans:2},
+];
+
+// STATE
+let currentMode = 'smart';
+let quizQuestions = [];
+let currentIdx = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let sessionMissed = [];
+let allTimeMissed = [];
+let answered = false;
+
+function loadMissed() {
+  try { const d = localStorage.getItem('cyber_missed_v2'); if(d) allTimeMissed = JSON.parse(d); } catch(e) { allTimeMissed = []; }
+}
+function saveMissed() {
+  try { localStorage.setItem('cyber_missed_v2', JSON.stringify(allTimeMissed)); } catch(e) {}
+}
+
+loadMissed();
+updateHomeStats();
+
+function updateHomeStats() {
+  document.getElementById('stat-total').textContent = ALL_QUESTIONS.length;
+  document.getElementById('stat-missed').textContent = allTimeMissed.length;
+  document.getElementById('missed-badge').style.display = allTimeMissed.length > 0 ? 'block' : 'none';
+}
+
+function selectMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function buildPool() {
+  if (currentMode === 'midterm') return shuffle(ALL_QUESTIONS.filter(q => q.source === 'midterm'));
+  if (currentMode === 'endterm') return shuffle(ALL_QUESTIONS.filter(q => q.source === 'endterm'));
+  if (currentMode === 'missed') {
+    if (allTimeMissed.length === 0) return shuffle(ALL_QUESTIONS);
+    return shuffle(allTimeMissed.map(i => ALL_QUESTIONS[i]).filter(Boolean));
+  }
+  if (currentMode === 'smart') {
+    if (allTimeMissed.length === 0) return shuffle(ALL_QUESTIONS);
+    const missedQs = shuffle(allTimeMissed.map(i => ALL_QUESTIONS[i]).filter(Boolean));
+    const otherQs = shuffle(ALL_QUESTIONS.filter((_,i) => !allTimeMissed.includes(i)));
+    return [...missedQs, ...otherQs];
+  }
+  return shuffle(ALL_QUESTIONS);
+}
+
+function startQuiz() {
+  const pool = buildPool();
+  quizQuestions = pool.slice(0, 10);
+  currentIdx = 0; correctCount = 0; wrongCount = 0; sessionMissed = []; answered = false;
+  showScreen('quiz-screen');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = quizQuestions[currentIdx];
+  document.getElementById('q-num').textContent = currentIdx + 1;
+  document.getElementById('q-total').textContent = quizQuestions.length;
+  document.getElementById('progress-fill').style.width = ((currentIdx / quizQuestions.length) * 100) + '%';
+  document.getElementById('score-correct').textContent = correctCount;
+  document.getElementById('score-wrong').textContent = wrongCount;
+  const tag = document.getElementById('source-tag');
+  tag.textContent = q.source === 'midterm' ? 'Midterm' : 'Endterm';
+  tag.className = 'source-tag ' + q.source;
+  document.getElementById('question-text').textContent = q.q;
+  document.getElementById('feedback-box').className = 'feedback-box';
+  document.getElementById('feedback-box').textContent = '';
+  document.getElementById('next-btn').className = 'next-btn';
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  ['A','B','C','D'].forEach((letter, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="opt-letter">${letter}</span>${q.opts[i]}`;
+    btn.onclick = () => selectAnswer(i);
+    opts.appendChild(btn);
+  });
+  answered = false;
+}
+
+function selectAnswer(chosen) {
+  if (answered) return;
+  answered = true;
+  const q = quizQuestions[currentIdx];
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+  btns[q.ans].classList.add('correct');
+  const fb = document.getElementById('feedback-box');
+  if (chosen === q.ans) {
+    correctCount++;
+    fb.textContent = '✓ Правильно!';
+    fb.className = 'feedback-box correct show';
+    const gi = ALL_QUESTIONS.indexOf(q);
+    allTimeMissed = allTimeMissed.filter(i => i !== gi);
+  } else {
+    wrongCount++;
+    btns[chosen].classList.add('wrong');
+    fb.textContent = `✗ Неверно. Правильный ответ: ${['A','B','C','D'][q.ans]}) ${q.opts[q.ans]}`;
+    fb.className = 'feedback-box wrong show';
+    const gi = ALL_QUESTIONS.indexOf(q);
+    if (gi !== -1 && !allTimeMissed.includes(gi)) allTimeMissed.push(gi);
+    if (gi !== -1 && !sessionMissed.includes(gi)) sessionMissed.push(gi);
+  }
+  document.getElementById('score-correct').textContent = correctCount;
+  document.getElementById('score-wrong').textContent = wrongCount;
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.textContent = currentIdx === quizQuestions.length - 1 ? 'Результат →' : 'Далее →';
+  nextBtn.className = 'next-btn show';
+}
+
+function nextQuestion() {
+  currentIdx++;
+  if (currentIdx >= quizQuestions.length) { saveMissed(); showResults(); }
+  else renderQuestion();
+}
+
+function showResults() {
+  const total = quizQuestions.length;
+  const pct = Math.round((correctCount / total) * 100);
+  document.getElementById('res-correct').textContent = correctCount;
+  document.getElementById('res-wrong').textContent = wrongCount;
+  document.getElementById('res-pct').textContent = pct + '%';
+  let grade, label;
+  if (pct >= 90) { grade='A'; label='Отличный результат! 🔥'; }
+  else if (pct >= 70) { grade='B'; label='Хорошо! Повтори ошибки.'; }
+  else if (pct >= 50) { grade='C'; label='Нужна тренировка!'; }
+  else { grade='D'; label='Учи ошибки — ты справишься!'; }
+  document.getElementById('result-grade').textContent = grade;
+  document.getElementById('result-grade').className = 'result-grade ' + grade;
+  document.getElementById('result-label').textContent = label;
+  document.getElementById('streak-info').textContent = allTimeMissed.length > 0
+    ? `⚡ В банке ошибок: ${allTimeMissed.length} вопросов — следующий раунд начнёт с них`
+    : '✓ Банк ошибок пуст — отличная работа!';
+  const missedList = document.getElementById('missed-list');
+  missedList.innerHTML = '';
+  const sec = document.getElementById('missed-section');
+  if (sessionMissed.length === 0) { sec.style.display = 'none'; }
+  else {
+    sec.style.display = 'block';
+    sessionMissed.forEach(idx => {
+      const q = ALL_QUESTIONS[idx];
+      const div = document.createElement('div');
+      div.className = 'missed-item';
+      div.innerHTML = `<strong>${q.source.toUpperCase()}</strong><br>${q.q}<br><span class="ans">✓ ${['A','B','C','D'][q.ans]}) ${q.opts[q.ans]}</span>`;
+      missedList.appendChild(div);
+    });
+  }
+  document.getElementById('progress-fill').style.width = '100%';
+  updateHomeStats();
+  showScreen('results-screen');
+}
+
+function trainMissed() { currentMode = 'missed'; startQuiz(); }
+function goHome() { updateHomeStats(); showScreen('start-screen'); }
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
